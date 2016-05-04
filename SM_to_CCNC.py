@@ -1,6 +1,4 @@
 # coding: utf-8
-# # Pandas import of the Excel file from Monkey
-
 import pandas as pd
 import os
 import numpy as np
@@ -9,12 +7,9 @@ import argparse
 import textwrap
 
 
-# > Set pandas options
-
+# Set pandas options
 pd.set_option('max_rows',5000)
 pd.set_option('max_columns',5000)
-
-
 
 def main(args):
     # import merged template
