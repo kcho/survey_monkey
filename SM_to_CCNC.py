@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-i', '--inputExcel',
-        help='Survey Monkey export file',
+        help='Survey Monkey exported data files',
         nargs='+',
         default=os.getcwd())
 
