@@ -25,3 +25,9 @@ optional arguments:
                         Excel ouput
 
 ```
+
+
+## Example 
+```
+python /ccnc_bin/survery_monkey/SM_to_CCNC.py -i Sheet_1.xls Sheet_2.xls Sheet_3.xls
+```
