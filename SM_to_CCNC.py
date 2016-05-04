@@ -1,11 +1,5 @@
-
 # coding: utf-8
-
 # # Pandas import of the Excel file from Monkey
-
-# > Import libraries
-
-# In[1]:
 
 import pandas as pd
 import os
@@ -17,77 +11,37 @@ import textwrap
 
 # > Set pandas options
 
-# In[2]:
-
 pd.set_option('max_rows',5000)
 pd.set_option('max_columns',5000)
 
 
 
 def main(args):
-    print args.inputExcel
-    # > import merged template
-
-    # In[3]:
-
-    merged_df = pd.read_excel(args.groupTemplate)
-    template_df = merged_df.T.reset_index()
+    # import merged template
+    group_template_df = pd.read_excel(args.groupTemplate)
+    template_df = group_template_df.T.reset_index()
     template_df.columns = ['title','subtitle','question name','answers']
-    # df.title = df.title.str.replace('<[^>]+>','')
-    # df.title = df.title.map(unicode)
-
-
-    # In[4]:
-
     template_df.ix[:8,'question name'] = 'personal_info'
 
 
-    # > Import excel file
-
-    # In[5]:
-
-    sheet_1 = pd.read_excel(args.inputExcel[0])
-    sheet_2 = pd.read_excel(args.inputExcel[1])
-    sheet_3 = pd.read_excel(args.inputExcel[2])
-
-
-    # In[6]:
-
-    all_sheets = pd.concat([sheet_1,
-                            sheet_2.ix[:,9:],
-                            sheet_3.ix[:,9:]],axis=1)
-
-
-    # In[7]:
-
+    # Survey monkey data
+    all_sheets = pd.concat([pd.read_excel(x) for x in args.inputExcel],axis=1)
     df = all_sheets.T.reset_index()
     df.columns = ['title','subtitle','answers']
     df.title = df.title.str.replace('<[^>]+>','')
     df.title = df.title.map(unicode)
 
 
-    # In[8]:
-
+    # template df 에서 question name 가지고오기
     df['question name'] = template_df['question name']
 
 
-    # # Template matching
-
-    # In[265]:
-
-    template = pd.ExcelFile(args.template)
-
-
-    # # Formula adding
-
-    # In[266]:
-
+    # Formula template
     template_openpyxl = openpyxl.load_workbook(args.template, data_only=False)
     #out_excel = openpyxl.load_workbook('/Users/kangik/Desktop/xlrd_prac.xls', data_only=False)
 
     #print df.head(10)
-    for num, sheet_name in enumerate(template.sheet_names[:-5]): # 뒤에서 5개를 제외한 템플레이트의 모든 sheet를 looping
-
+    for num, sheet_name in enumerate(template_openpyxl.sheetnames[:-5]): # 뒤에서 5개를 제외한 템플레이트의 모든 sheet를 looping
         # 엑셀파일에 데이터가 바로 들어가는 것이 아니고,
         # 행 열, 4칸 3칸씩 띄우고 데이터가 들어감
         startRow = 5
@@ -96,8 +50,6 @@ def main(args):
         sheet = template_openpyxl.get_sheet_by_name(sheet_name) # sheet를 불러옴
         data = df.ix[df['question name'].str.strip()==sheet_name] # 서베이멍키에서 불러온 자료를 불러옴
         
-
-
         if sheet_name == u'기본정보':
             startRow -= 1
             startCol -= 1
@@ -145,7 +97,7 @@ def main(args):
                 startRow +=1
 
     template_openpyxl.save(args.output)
-
+    print 'Completed'
 
 
 
