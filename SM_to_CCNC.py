@@ -9,7 +9,7 @@ import textwrap
 pd.set_option('max_rows',5000)
 pd.set_option('max_columns',5000)
 
-def main(args):
+def surveyMonkeyToCCNC(args):
 
     template_df = load_template(args.surveyTemplate)
     real_df = excel_merge_rearrange(args.inputExcel)
@@ -149,4 +149,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
 
-    main(args)
+    surveyMonkeyToCCNC(args)
