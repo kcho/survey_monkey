@@ -11,29 +11,53 @@ pd.set_option('max_columns',5000)
 
 def main(args):
 
+    template_df = load_template(args.surveyTemplate)
+    real_df = excel_merge_rearrange(args.inputExcel)
+    real_df['question name'] = template_df['question name']
+
+    template_openpyxl = openpyxl.load_workbook(args.template, data_only=False)
+    update_template_excel(template_openpyxl, real_df)
+    template_openpyxl.save(args.output)
+
+    print '=========='
+    print 'Completed'
+    print '=========='
+
+
+def load_template(survey_monkey_template):
+    '''
+    Takes input of survey monkey template location.
+    A row of question name should be in the excel file.
+    '''
     # Load survey monkey template with question names
-    template_df = pd.read_excel(args.groupTemplate).T.reset_index()
+    template_df = pd.read_excel(survey_monkey_template).T.reset_index()
     template_df.columns = ['title','subtitle','question name','answers']
     template_df.ix[:8,'question name'] = 'personal_info'
+    return template_df
 
-    # Survey monkey data
-    '''Add a subject selection part later'''
-    all_sheets = pd.concat([pd.read_excel(x, index_col=range(9)) for x in args.inputExcel],
+def excel_merge_rearrange(excelList):
+    '''
+    Takes input of list of excel file locations.
+
+    It extracts the last subject's data in the excel List,
+    concatenating them to a pandas dataframe.
+    Also, the 'title' column is decoded to unicode.
+    '''
+
+    all_sheets = pd.concat([pd.read_excel(x, index_col=range(9)) for x in excelList],
                            axis=1).reset_index()
-    real_df = all_sheets.T.reset_index()
+    
+    # Extracts the last subject before transposing
+    real_df = all_sheets.ix[all_sheets.index[[0,-1]],:].T.reset_index()
+    #real_df = all_sheets.T.reset_index()
     real_df.columns = ['title','subtitle','answers']
 
     real_df.title = real_df.title.str.replace('<[^>]+>','')
     real_df.title = real_df.title.map(unicode)
+    return real_df
 
 
-    # template df 에서 question name 가지고오기
-    real_df['question name'] = template_df['question name']
-
-
-    # Formula template
-    template_openpyxl = openpyxl.load_workbook(args.template, data_only=False)
-
+def update_template_excel(template_openpyxl, real_df):
     for num, question_name in enumerate(template_openpyxl.sheetnames[:-5]): # 뒤에서 5개를 제외한 템플레이트의 모든 sheet를 looping
         # 엑셀파일에 데이터가 바로 들어가는 것이 아니고,
         # 행 열, 4칸 3칸씩 띄우고 데이터가 들어감
@@ -62,17 +86,12 @@ def main(args):
 
 
         elif question_name == '(H, I) SCL, EF': #이런 이름을 가진 sheet는
-            for num,answer in enumerate(data.answers[:29]): #처음 29줄을 프린트하고
-                sheet.cell(row = startRow, column=startCol).value =  answer
-                sheet.cell(row=startRow, column=startCol+1).value = answer
-                startRow+=1
-
-            startRow+=4 #세칸 띄우고
-
-            for num,answer in enumerate(data.answers[29:]): #나머지를 프린트
-                sheet.cell(row=startRow, column=startCol).value =  answer
-                sheet.cell(row=startRow, column=startCol+1).value = answer
-                startRow+=1
+            for num,answer in enumerate(data.answers): #나머지를 프린트
+                doubleCellWrite(sheet.cell, startRow, startCol, answer)
+                if num==28:
+                    startRow+=5 #세칸 띄우고
+                else:
+                    startRow+=1
 
         elif question_name == '(8) ELSQ': #이런 이름을 가진 sheet는
             # 3, 4, 3, 4가 반복되는 리스트를 만듬 (column이 3,4 순으로 들어감)
@@ -85,16 +104,12 @@ def main(args):
 
         else:
             for answer in data.answers:# 서베이멍키에서 불러온 각 문제의 자료들을 looping
-                sheet.cell(row=startRow, column=startCol).value = answer#데이터 입력
-                sheet.cell(row=startRow, column=startCol+1).value = answer#더블체크 칸 데이터 동일하게 입력
+                doubleCellWrite(sheet.cell, startRow, startCol, answer)
                 startRow +=1
 
-    template_openpyxl.save(args.output)
-
-    print '=========='
-    print 'Completed'
-    print '=========='
-
+def doubleCellWrite(cell, row, column, answer):
+    cell(row = row, column = column).value = answer
+    cell(row = row, column = column+1).value = answer
 
 
 if __name__ == '__main__':
@@ -122,7 +137,7 @@ if __name__ == '__main__':
         default = '/ccnc_bin/survery_monkey/template.xlsx')
 
     parser.add_argument(
-        '-gt', '--groupTemplate',
+        '-gt', '--surveyTemplate',
         help='Survey monkey template with question name column',
         default = '/ccnc_bin/survery_monkey/merged.xlsx')
 
